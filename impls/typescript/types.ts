@@ -15,10 +15,11 @@ enum Types {
 	FALSE = 'false',
 	VECTOR = 'vector',
 	HASHMAP = 'hashmap',
-	FUNCTION = 'function'
+	FUNCTION = 'function',
+	FN = 'mal_function'
 }
 
-type TType = Types.LIST | Types.NUMBER | Types.SYMBOL | Types.STRING | Types.NIL | Types.TRUE | Types.FALSE | Types.VECTOR | Types.HASHMAP | Types.FUNCTION;
+type TType = Types.LIST | Types.NUMBER | Types.SYMBOL | Types.STRING | Types.NIL | Types.TRUE | Types.FALSE | Types.VECTOR | Types.HASHMAP | Types.FUNCTION | Types.FN;
 type TListType = Types.LIST | Types.VECTOR | Types.HASHMAP;
 
 
@@ -39,8 +40,15 @@ interface Env {
 }
 
 interface Mal {
-	value: Mal[] | number | string | HashMap | Function ;
+	value: Mal[] | number | string | HashMap | Function | Fn;
 	tipo: TType
 }
 
-export { Reader, Mal, TType, HashMap, TListType, Types, LookupTable, Env };
+interface Fn {
+	body: Mal;
+	params: Array<{value: string; tipo: TType}>;
+	env: Env;
+	fn: Function
+}
+
+export { Reader, Mal, Fn, TType, HashMap, TListType, Types, LookupTable, Env };
