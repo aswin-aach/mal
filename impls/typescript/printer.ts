@@ -16,8 +16,12 @@ function pr_str(ast: Mal, print_readably = false): string {
 			return `${ast.value}`;
 		case Types.LIST:
 		case Types.VECTOR: {
-			const str_val = (ast.value as Mal[]).reduce((acc_string, new_mal) => 
-				`${acc_string}${pr_str(new_mal, print_readably)} `, '');
+			const str_val = (ast.value as Mal[]).reduce((acc_string, new_mal) => {
+				let part = pr_str(new_mal, print_readably);
+				// if (new_mal.tipo === Types.STRING)
+				// 	part = part.slice(1, -1);
+				return `${acc_string}${part} `;
+			}, '');
 			if ( ast.tipo === Types.VECTOR)
 				return `[${str_val.slice(0, -1)}]`;
 			return `(${str_val.slice(0, -1)})`;
@@ -33,6 +37,8 @@ function pr_str(ast: Mal, print_readably = false): string {
 				return acc;
 			}, '');
 			return `{${str_val.slice(1)}}`;
+		case Types.FUNCTION:
+			return '#<function>';
 		default:
 			return ''; // exception instead?
 	}
