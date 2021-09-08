@@ -1,5 +1,8 @@
-import {Mal, Types, TType} from './types';
+import {Mal, Types, TType, Fn} from './types';
 import {pr_str} from './printer';
+import {read_str} from './reader';
+import {readFileSync} from 'fs';
+
 
 const fail = {
 	value: 'false',
@@ -136,7 +139,6 @@ const ns: {[symbol: string]: Mal} = {
 		value: (...elements: Mal[]): {value: string; tipo: TType} => ({
 			value: elements.map((element) => {
 				const rendered = pr_str(element, false);
-				console.log(rendered);
 				if ([Types.STRING].includes(element.tipo))
 					return rendered.slice(1, -1);
 				return rendered;
@@ -154,6 +156,61 @@ const ns: {[symbol: string]: Mal} = {
 				return rendered;
 			}).join(' '));
 			return nil;
+		},
+		tipo: Types.FUNCTION
+	},
+	'read-string': {
+		value: (str: {value: string; tipo: TType}) => 
+			read_str(str.value),
+		tipo: Types.FUNCTION
+	},
+	'slurp': {
+		value: (filename: {value: string; tipo: TType}): {value: string; tipo: TType} => {
+			const contents = readFileSync(filename.value);
+			return {
+				value: contents.toString(),
+				tipo: Types.STRING
+			};
+		},
+		tipo: Types.FUNCTION
+	},
+	'atom': {
+		value: (ast: Mal): {value: Mal; tipo: TType} => ({
+			value: ast,
+			tipo: Types.ATOM
+		}),
+		tipo: Types.FUNCTION
+	},
+	'atom?': {
+		value: (ast: Mal) => {
+			if (ast.tipo === Types.ATOM)
+				return success;
+			return fail;
+		},
+		tipo: Types.FUNCTION
+	},
+	'deref': {
+		value: (ast: {value: Mal; tipo: TType}) => ast.value,
+		tipo: Types.FUNCTION
+	},
+	'reset!': {
+		value: (atom: {value: Mal; tipo: TType}, new_value: Mal): Mal => {
+			atom.value = new_value;
+			return new_value;
+		},
+		tipo: Types.FUNCTION
+	},
+	'swap!': {
+		value: (atom: {value: Mal; tipo: TType}, lambda: {value: Function | Fn; tipo: TType}, ...args: Mal[]): Mal => {
+			let function_obj: Function;
+			if (lambda.tipo === Types.FUNCTION) {
+				function_obj = lambda.value as Function;
+			} else {
+				function_obj = (lambda.value as Fn).fn;
+			}
+			const result: Mal = function_obj.apply(null, [atom.value, ...args]);
+			atom.value = result;
+			return result;
 		},
 		tipo: Types.FUNCTION
 	}

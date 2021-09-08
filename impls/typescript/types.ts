@@ -16,10 +16,11 @@ enum Types {
 	VECTOR = 'vector',
 	HASHMAP = 'hashmap',
 	FUNCTION = 'function',
-	FN = 'mal_function'
+	FN = 'mal_function',
+	ATOM = 'atom'
 }
 
-type TType = Types.LIST | Types.NUMBER | Types.SYMBOL | Types.STRING | Types.NIL | Types.TRUE | Types.FALSE | Types.VECTOR | Types.HASHMAP | Types.FUNCTION | Types.FN;
+type TType = Types.LIST | Types.NUMBER | Types.SYMBOL | Types.STRING | Types.NIL | Types.TRUE | Types.FALSE | Types.VECTOR | Types.HASHMAP | Types.FUNCTION | Types.FN | Types.ATOM;
 type TListType = Types.LIST | Types.VECTOR | Types.HASHMAP;
 
 
@@ -40,7 +41,7 @@ interface Env {
 }
 
 interface Mal {
-	value: Mal[] | number | string | HashMap | Function | Fn;
+	value: Mal[] | number | string | HashMap | Function | Fn | Mal;
 	tipo: TType
 }
 

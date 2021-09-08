@@ -111,6 +111,19 @@ function read_form(reader: Reader): Mal {
 	const topSymbol = reader.peek();
 	if (!topSymbol)
 		throw new SyntaxError();
+	if (topSymbol === '@') {
+		reader.next();
+		return {
+			value: [
+				{
+					value: 'deref',
+					tipo: Types.SYMBOL
+				},
+				read_form(reader)
+			],
+			tipo: Types.LIST
+		};
+	}
 	if (topSymbol  === '(' || topSymbol === '[' || topSymbol === '{') {
 		reader.next();
 		return read_list(reader, topSymbol === '(' ? Types.LIST : topSymbol === '[' ? Types.VECTOR : Types.HASHMAP);

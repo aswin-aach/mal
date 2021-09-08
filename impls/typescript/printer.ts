@@ -39,6 +39,8 @@ function pr_str(ast: Mal, print_readably = false): string {
 			return `{${str_val.slice(1)}}`;
 		case Types.FUNCTION:
 			return '#<function>';
+		case Types.ATOM:
+			return `(atom ${pr_str(ast.value as Mal)})`;
 		default:
 			return ''; // exception instead?
 	}
