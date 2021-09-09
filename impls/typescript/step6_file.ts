@@ -147,9 +147,14 @@ function rep(input: string): string {
 rep('(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))');
 rep('(def! not (fn* (a) (if a false true)))');
 
+repl_env.set_data('*ARGV*', {
+	value: argv.slice(3).map(arg => ({value: arg, tipo: Types.STRING})),
+	tipo: Types.LIST
+});
+
 if (argv.length > 2) {
 	const file_path: string = argv[2];
-	rep(`(load-file "${file_path}"`);
+	rep(`(load-file "${file_path}")`);
 	exit(0);
 }
 
