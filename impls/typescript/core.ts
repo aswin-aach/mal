@@ -246,6 +246,42 @@ const ns: {[symbol: string]: Mal} = {
 
 		},
 		tipo: Types.FUNCTION
+	},
+	'nth': {
+		value: (list: {value: Mal[], tipo: TType}, index: {value: number; tipo: TType}) => {
+			if (index.value >= list.value.length)
+				throw new Error(`Index ${index.value} out of bounds for list`);
+			return list.value[index.value];
+		},
+		tipo: Types.FUNCTION
+	},
+	'first': {
+		value: (ast: Mal) => {
+			if (![Types.LIST, Types.VECTOR].includes(ast.tipo))
+				return nil;
+			const list = ast.value as Mal[];
+			if (list.length) {
+				return list[0];
+			}
+			return nil;
+		},
+		tipo: Types.FUNCTION
+	},
+	'rest': {
+		value: (ast: Mal): Mal => {
+			const empty_list = {value: [], tipo: Types.LIST};
+			if (![Types.LIST, Types.VECTOR].includes(ast.tipo))
+				return empty_list;
+			const list = ast.value as Mal[];
+			if (list.length) {
+				return {
+					value: list.slice(1),
+					tipo: Types.LIST
+				};
+			}
+			return empty_list;
+		},
+		tipo: Types.FUNCTION
 	}
 };
 

@@ -49,7 +49,8 @@ interface Fn {
 	body: Mal;
 	params: Array<{value: string; tipo: TType}>;
 	env: Env;
-	fn: Function
+	fn: Function;
+	is_macro?: boolean;
 }
 
 export { Reader, Mal, Fn, TType, HashMap, TListType, Types, LookupTable, Env };
