@@ -111,12 +111,12 @@ function read_form(reader: Reader): Mal {
 	const topSymbol = reader.peek();
 	if (!topSymbol)
 		throw new SyntaxError();
-	if (topSymbol === '@') {
+	const apply_shorthand = (str: string) => {
 		reader.next();
 		return {
 			value: [
 				{
-					value: 'deref',
+					value: str,
 					tipo: Types.SYMBOL
 				},
 				read_form(reader)
@@ -124,11 +124,25 @@ function read_form(reader: Reader): Mal {
 			tipo: Types.LIST
 		};
 	}
-	if (topSymbol  === '(' || topSymbol === '[' || topSymbol === '{') {
-		reader.next();
-		return read_list(reader, topSymbol === '(' ? Types.LIST : topSymbol === '[' ? Types.VECTOR : Types.HASHMAP);
+	switch(topSymbol) {
+		case '@':
+			return apply_shorthand('deref');
+		case "'":
+			return apply_shorthand('quote');
+		case '`':
+			return apply_shorthand('quasiquote');
+		case '~':
+			return apply_shorthand('unquote');
+		case '~@':
+			return apply_shorthand('splice-unquote');
+		case '(':
+		case '[':
+		case '{':
+			reader.next();
+			return read_list(reader, topSymbol === '(' ? Types.LIST : topSymbol === '[' ? Types.VECTOR : Types.HASHMAP);
+		default:
+			return read_atom(reader.next());
 	}
-	return read_atom(reader.next());
 }
 
 function read_str(input: string): Mal {

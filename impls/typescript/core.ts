@@ -213,6 +213,39 @@ const ns: {[symbol: string]: Mal} = {
 			return result;
 		},
 		tipo: Types.FUNCTION
+	},
+	'cons': {
+		value: (pre: Mal, list: {value: Mal[], tipo: TType}) => ({
+			value: [pre, ...list.value],
+			tipo: Types.LIST
+		}),
+		tipo: Types.FUNCTION
+	},
+	'concat': {
+		value: (...elements: Array<{value: Mal[]; tipo: TType}>) => ({
+			value: elements.reduce((acc: Mal[], element) => [...acc, ...element.value], []),
+			tipo: Types.LIST
+		}),
+		tipo: Types.FUNCTION
+	},
+	'vec': {
+		value: (ast: Mal) => {
+			if (ast.tipo === Types.VECTOR)
+				return ast;
+			if (!Array.isArray(ast.value)) {
+				return {
+					value: [ast],
+					tipo: Types.VECTOR
+				};
+			}
+			return {
+				...ast,
+				tipo: Types.VECTOR
+			}
+
+
+		},
+		tipo: Types.FUNCTION
 	}
 };
 
