@@ -22,3 +22,7 @@ GRTAGS
 logs
 old
 tmp/
+out/
+.vscode/launch.json
+.vscode/settings.json
+.vscode/tasks.json
