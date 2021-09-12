@@ -18,7 +18,7 @@ function Envir(outer?: Env): Env {
 		get_data: function (key: string): Mal {
 			const value = this.find(key);
 			if (!value)
-				throw new ReferenceError(`Symbol ${key} not found`);
+				throw new ReferenceError(`'${key}' not found`);
 			return value;
 		}
 	};

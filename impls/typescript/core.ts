@@ -1,7 +1,8 @@
-import {Mal, Types, TType, Fn} from './types';
+import {Mal, Types, TType, Fn, HashMap} from './types';
 import {pr_str} from './printer';
 import {read_str} from './reader';
 import {readFileSync} from 'fs';
+import {MalError} from './utils';
 
 
 const fail = {
@@ -98,6 +99,20 @@ const ns: {[symbol: string]: Mal} = {
 				}
 				return success;
 			}
+			if (ast1.tipo === Types.HASHMAP) {
+				const left_map = ast1.value as HashMap;
+				const right_map = ast2.value as HashMap;
+				const left_keys = Object.keys(left_map);
+				const right_keys = Object.keys(right_map);
+				if (left_keys.length !== right_keys.length)
+					return fail;
+				for(let key of left_keys) {
+					if (is_equal(left_map[`${key}`], right_map[`${key}`]) === fail)
+						return fail;
+				}
+				return success;
+			}
+
 			if (ast1.value === ast2.value)
 				return success;
 			return fail;
@@ -139,7 +154,7 @@ const ns: {[symbol: string]: Mal} = {
 		value: (...elements: Mal[]): {value: string; tipo: TType} => ({
 			value: elements.map((element) => {
 				const rendered = pr_str(element, false);
-				if ([Types.STRING].includes(element.tipo))
+				if ([Types.STRING].includes(element.tipo) && (element.value as string).slice(0, 1) !== '\u{29E}')
 					return rendered.slice(1, -1);
 				return rendered;
 			}).join(''),
@@ -282,8 +297,206 @@ const ns: {[symbol: string]: Mal} = {
 			return empty_list;
 		},
 		tipo: Types.FUNCTION
+	},
+	'throw': {
+		value: (message: Mal) => {
+			throw new MalError(pr_str(message, true));
+		},
+		tipo: Types.FUNCTION
+	},
+	'apply': {
+		value: (func: {value: Function | Fn, tipo: TType}, ...args_list: Mal[]) => {
+			const list = args_list.pop() as {value: Mal[], tipo: TType};
+			const args = [...args_list, ...list.value];
+			if (func.tipo === Types.FUNCTION) {
+				return (func.value as Function).apply(null, args);
+			}
+			return (func.value as Fn).fn.apply(null, args);
+		},
+		tipo: Types.FUNCTION
+	},
+	'map': {
+		value: (func: {value: Function | Fn, tipo: TType}, list: {value: Mal[], tipo: TType}) => {
+			let fn: Function;
+			if (func.tipo === Types.FUNCTION) {
+				fn = func.value as Function;
+			} else {
+				fn = (func.value as Fn).fn;
+			}
+			return {
+				tipo: Types.LIST,
+				value: list.value.map((element) => fn(element))
+			};
+		},
+		tipo: Types.FUNCTION
+	},
+	'nil?': {
+		value: (ast: Mal) => {
+			if (ast.tipo === Types.NIL)
+				return success;
+			return fail;
+		},
+		tipo: Types.FUNCTION
+	},
+	'true?': {
+		value: (ast: Mal) => {
+			if (ast.tipo === Types.TRUE) {
+				return success;
+			}
+			return fail;
+		},
+		tipo: Types.FUNCTION
+	},
+	'false?': {
+		value: (ast: Mal) => {
+			if ([Types.NIL, Types.FALSE].includes(ast.tipo)) {
+				return success;
+			}
+			return fail;
+		},
+		tipo: Types.FUNCTION
+	},
+	'symbol?': {
+		value: (ast: Mal) => {
+			if (ast.tipo === Types.SYMBOL) {
+				return success;
+			}
+			return fail;
+		},
+		tipo: Types.FUNCTION
+	},
+	'symbol': {
+		value: (ast: {value: string; tipo: TType}) => ({
+			...ast,
+			tipo: Types.SYMBOL
+		}),
+		tipo: Types.FUNCTION
+	},
+	'keyword': {
+		value: (ast: {value: string; tipo: TType}) => {
+			if (ast.value.slice(0, 1) === '\u{29E}')
+				return ast;
+			return {
+				...ast,
+				value: `\u{29E}${ast.value}`
+			};
+		},
+		tipo: Types.FUNCTION
+	},
+	'keyword?': {
+		value: (ast: {value: string; tipo: TType}) => {
+			if (ast.value.slice(0, 1) === '\u{29E}')
+				return success;
+			return fail;
+		},
+		tipo: Types.FUNCTION
+	},
+	'vector': {
+		value: (...args: Mal[]) => ({
+			value: args,
+			tipo: Types.VECTOR
+		}),
+		tipo: Types.FUNCTION
+	},
+	'vector?': {
+		value: (ast: Mal) => {
+			if (ast.tipo === Types.VECTOR)
+				return success;
+			return fail;
+		},
+		tipo: Types.FUNCTION
+	},
+	'sequential?': {
+		value: (ast: Mal) => {
+			if([Types.LIST, Types.VECTOR].includes(ast.tipo))
+				return success;
+			return fail;
+		},
+		tipo: Types.FUNCTION
+	},
+	'hash-map': {
+		value: (...args: Mal[]) => {
+			const map: HashMap = {};
+			merge_to_map(args, map);
+			return {
+				value: map,
+				tipo: Types.HASHMAP
+			};
+		},
+		tipo: Types.FUNCTION
+	},
+	'map?': {
+		value: (ast: Mal) => {
+			if (ast.tipo === Types.HASHMAP)
+				return success;
+			return fail;
+		},
+		tipo: Types.FUNCTION
+	},
+	'assoc': {
+		value: (originalmap: {value: HashMap, tipo: TType}, ...args: Mal[]) => {
+			const {...resultmap} = originalmap.value;
+			merge_to_map(args, resultmap);
+			return {
+				value: resultmap,
+				tipo: Types.HASHMAP
+			};
+		},
+		tipo: Types.FUNCTION
+	},
+	'dissoc': {
+		value: (originalmap: {value: HashMap, tipo: TType}, ...args: Array<{value: string; tipo: TType}>) => {
+			const {...resultmap} = originalmap.value;
+			for (let symbol_to_remove of args) {
+				delete resultmap[symbol_to_remove.value];
+			}
+			return {
+				value: resultmap,
+				tipo: Types.HASHMAP
+			};
+		},
+		tipo: Types.FUNCTION
+	},
+	'get': {
+		value: (map: {value: HashMap, tipo: TType}, key: {value: string; tipo: TType}) => {
+			return map.value[key.value] || nil;
+		},
+		tipo: Types.FUNCTION
+	},
+	'contains?': {
+		value: (map: {value: HashMap, tipo: TType}, key: {value: string; tipo: TType}) => {
+			if (map.value[key.value]) {
+				return success;
+			}
+			return fail;
+		},
+		tipo: Types.FUNCTION
+	},
+	'keys': {
+		value: (map: {value: HashMap, tipo: TType}): {value: Mal[], tipo: TType} => ({
+			value: Object.keys(map.value).map(key => ({value: key, tipo: Types.STRING})),
+			tipo: Types.LIST
+		}),
+		tipo: Types.FUNCTION
+	},
+	'vals': {
+		value: (map: {value: HashMap, tipo: TType}): {value: Mal[], tipo: TType} => ({
+			value: Object.values(map.value),
+			tipo: Types.LIST
+		}),
+		tipo: Types.FUNCTION
 	}
 };
 
+function merge_to_map(args: Mal[], map: HashMap) {
+	if (args.length % 2)
+			throw new SyntaxError('unbalanced');
+	for (let index = 0; index < args.length; index += 2) {
+		if (args[index].tipo !== Types.STRING || typeof args[index].value !== 'string')
+			throw new SyntaxError('hashmap key wrong');
+		map[args[index].value as string] = args[index + 1];
+	}
+}
 
 export {ns};
+

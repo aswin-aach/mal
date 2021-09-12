@@ -24,4 +24,11 @@ function unApplyEscapeCharacters(input: string) {
 	return input.replace(/\\/g, '\\\\').replace(/\"/g, '\\"').replace(/\n/g, '\\n');
 }
 
-export { applyEscapeCharacters, unApplyEscapeCharacters };
+class MalError extends Error {
+	constructor(message: string) {
+	  super(message);
+	  this.name = 'MalError';
+	}
+  }
+
+export { applyEscapeCharacters, unApplyEscapeCharacters, MalError };
